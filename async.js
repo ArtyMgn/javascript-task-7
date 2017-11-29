@@ -10,14 +10,14 @@ exports.runParallel = runParallel;
  * @returns {Promise}
  */
 function runParallel(jobs, parallelNum, timeout = 1000) {
-    let jobsResult = [];
-    let jobsCounter = 0;
-    let jobsPromises = [];
-
     return new Promise(resolve => {
         if (!jobs.length || parallelNum <= 0) {
-            resolve(jobsResult);
+            resolve([]);
         }
+
+        let jobsResult = [];
+        let jobsCounter = 0;
+        let jobsPromises = [];
 
         function completeJob(jobResult, jobIndex) {
             jobsResult[jobIndex] = jobResult;
@@ -31,7 +31,8 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
 
         function startNextJob() {
             let jobCompletionHandler = result => completeJob(result, jobsCounter++);
-            jobsPromises.shift()
+            let currentJob = jobsPromises.shift();
+            currentJob()
                 .then(jobCompletionHandler)
                 .catch(jobCompletionHandler);
         }
@@ -47,7 +48,7 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
  * @returns {Array}
  */
 function createPromisesWithTimeout(jobs, timeout) {
-    return jobs.map(job => new Promise((resolve, reject) => {
+    return jobs.map(job => () => new Promise((resolve, reject) => {
         job().then(resolve, reject);
         setTimeout(() => reject(new Error('exceeded time limit')), timeout);
     }));

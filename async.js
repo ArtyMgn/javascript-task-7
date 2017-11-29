@@ -10,19 +10,21 @@ exports.runParallel = runParallel;
  * @returns {Promise}
  */
 function runParallel(jobs, parallelNum, timeout = 1000) {
+    let jobsResult = [];
+    let jobsCounter = 0;
+    let numberOfFinishedJobs = 0;
+    let jobsPromises = [];
+
     return new Promise(resolve => {
         if (!jobs.length || parallelNum <= 0) {
             resolve([]);
         }
 
-        let jobsResult = [];
-        let jobsCounter = 0;
-        let jobsPromises = [];
-
         function completeJob(jobResult, jobIndex) {
+            numberOfFinishedJobs++;
             jobsResult[jobIndex] = jobResult;
 
-            if (jobsPromises.length === 0) {
+            if (jobs.length === numberOfFinishedJobs) {
                 resolve(jobsResult);
             } else {
                 startNextJob();
@@ -30,6 +32,9 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
         }
 
         function startNextJob() {
+            if (jobsPromises.length === 0) {
+                return null;
+            }
             let indexOfJob = jobsCounter++;
             let jobCompletionHandler = result => completeJob(result, indexOfJob);
             let currentJob = jobsPromises.shift();

@@ -56,6 +56,6 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
 function createPromisesWithTimeout(jobs, timeout) {
     return jobs.map(job => () => new Promise((resolve, reject) => {
         job().then(resolve, reject);
-        setTimeout(() => reject(new Error('exceeded time limit')), timeout);
+        setTimeout(() => reject(new Error('Promise timeout')), timeout);
     }));
 }

@@ -17,14 +17,13 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
 
     return new Promise(resolve => {
         if (!jobs.length || parallelNum <= 0) {
-            resolve([]);
+            resolve(jobsResult);
         }
 
         function completeJob(jobResult, jobIndex) {
-            numberOfFinishedJobs++;
             jobsResult[jobIndex] = jobResult;
 
-            if (jobs.length === numberOfFinishedJobs) {
+            if (jobs.length === numberOfFinishedJobs++) {
                 resolve(jobsResult);
             } else {
                 startNextJob();
@@ -35,6 +34,7 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
             if (jobsPromises.length === 0) {
                 return null;
             }
+
             let indexOfJob = jobsCounter++;
             let jobCompletionHandler = result => completeJob(result, indexOfJob);
             let currentJob = jobsPromises.shift();

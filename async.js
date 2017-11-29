@@ -7,7 +7,48 @@ exports.runParallel = runParallel;
  * @param {Array} jobs – функции, которые возвращают промисы
  * @param {Number} parallelNum - число одновременно исполняющихся промисов
  * @param {Number} timeout - таймаут работы промиса
+ * @returns {Promise}
  */
 function runParallel(jobs, parallelNum, timeout = 1000) {
-    // асинхронная магия
+    let jobsResult = [];
+    let jobsCounter = 0;
+    let jobsPromises = [];
+
+    return new Promise(resolve => {
+        if (!jobs.length || parallelNum <= 0) {
+            resolve(jobsResult);
+        }
+
+        function completeJob(jobResult, jobIndex) {
+            jobsResult[jobIndex] = jobResult;
+
+            if (jobsPromises.length === 0) {
+                resolve(jobsResult);
+            } else {
+                startNextJob();
+            }
+        }
+
+        function startNextJob() {
+            let jobCompletionHandler = result => completeJob(result, jobsCounter++);
+            jobsPromises.shift()
+                .then(jobCompletionHandler)
+                .catch(jobCompletionHandler);
+        }
+
+        jobsPromises = createPromisesWithTimeout(jobs, timeout);
+        jobsPromises.slice(0, parallelNum).forEach(startNextJob);
+    });
+}
+
+/** Функция паралелльно запускает указанное число промисов
+ * @param {Array} jobs – функции, которые возвращают промисы
+ * @param {Number} timeout - таймаут работы промиса
+ * @returns {Array}
+ */
+function createPromisesWithTimeout(jobs, timeout) {
+    return jobs.map(job => new Promise((resolve, reject) => {
+        job().then(resolve, reject);
+        setTimeout(() => reject(new Error('exceeded time limit')), timeout);
+    }));
 }

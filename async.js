@@ -30,7 +30,8 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
         }
 
         function startNextJob() {
-            let jobCompletionHandler = result => completeJob(result, jobsCounter++);
+            let indexOfJob = jobsCounter++;
+            let jobCompletionHandler = result => completeJob(result, indexOfJob);
             let currentJob = jobsPromises.shift();
             currentJob()
                 .then(jobCompletionHandler)

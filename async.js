@@ -26,26 +26,20 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
 
             if (jobs.length === numberOfFinishedJobs) {
                 resolve(jobsResult);
-            } else {
-                startNextJob();
+            } else if (jobsPromises.length !== 0) {
+                startJob(jobsPromises.shift());
             }
         }
 
-        function startNextJob() {
-            if (jobsPromises.length === 0) {
-                return null;
-            }
-
+        function startJob(job) {
             let indexOfJob = jobsCounter++;
             let jobCompletionHandler = result => completeJob(result, indexOfJob);
-            let currentJob = jobsPromises.shift();
-            currentJob()
-                .then(jobCompletionHandler)
+            job().then(jobCompletionHandler)
                 .catch(jobCompletionHandler);
         }
 
         jobsPromises = createPromisesWithTimeout(jobs, timeout);
-        jobsPromises.slice(0, parallelNum).forEach(startNextJob);
+        jobsPromises.splice(0, parallelNum).forEach(startJob);
     });
 }
 
@@ -55,8 +49,11 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
  * @returns {Array}
  */
 function createPromisesWithTimeout(jobs, timeout) {
-    return jobs.map(job => () => new Promise((resolve, reject) => {
-        job().then(resolve, reject);
-        setTimeout(() => reject(new Error('Promise timeout')), timeout);
-    }));
+    return jobs.map(job => {
+        let timeoutPromise = new Promise((resolve, reject) => {
+            setTimeout(() => reject('Promise timeout'), timeout);
+        });
+
+        return () => Promise.race([job(), timeoutPromise]);
+    });
 }

@@ -48,15 +48,11 @@ function runParallel(jobs, parallelNum, timeout = 1000) {
  * @param {Number} timeout - таймаут работы промиса
  * @returns {Array}
  */
-function createPromisesWithTimeout(jobs, timeout) {
-    return jobs.map(job => {
-        let timeoutPromise = () => new Promise((resolve) => {
-            let id = setTimeout(() => {
-                clearTimeout(id);
-                resolve(new Error('Promise timeout'));
-            }, timeout);
-        });
 
-        return () => Promise.race([job(), timeoutPromise()]);
-    });
+function createPromisesWithTimeout(jobs, timeout) {
+    return jobs.map(job => () => new Promise((resolve, reject) => {
+        job().then(resolve, reject);
+        setTimeout(() => reject(new Error('Promise timeout')), timeout);
+    }));
 }
+
